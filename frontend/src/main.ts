@@ -15,6 +15,9 @@ import { useAppStore } from '@/stores/app'
 const appStore = useAppStore()
 appStore.initFromInjectedConfig()
 
+// Load custom menu items from runtime config
+appStore.loadCustomMenuItems()
+
 // Set document title immediately after config is loaded
 if (appStore.siteName && appStore.siteName !== 'Sub2API') {
   document.title = `${appStore.siteName} - AI API Gateway`

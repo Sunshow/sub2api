@@ -6,6 +6,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Toast, ToastType, PublicSettings } from '@/types'
+import type { CustomMenuItem } from '@/types/global'
 import {
   checkUpdates as checkUpdatesAPI,
   type VersionInfo,
@@ -31,6 +32,9 @@ export const useAppStore = defineStore('app', () => {
   const apiBaseUrl = ref<string>('')
   const docUrl = ref<string>('')
   const cachedPublicSettings = ref<PublicSettings | null>(null)
+
+  // Custom menu items from runtime config
+  const customMenuItems = ref<CustomMenuItem[]>([])
 
   // Version cache state
   const versionLoaded = ref<boolean>(false)
@@ -371,6 +375,30 @@ export const useAppStore = defineStore('app', () => {
     return false
   }
 
+  /**
+   * Load custom menu items from runtime config
+   */
+  function loadCustomMenuItems(): void {
+    try {
+      if (window.__CUSTOM_CONFIG__?.customMenuItems) {
+        const items = window.__CUSTOM_CONFIG__.customMenuItems
+        // Validate and set defaults
+        customMenuItems.value = items.map((item) => ({
+          label: item.label || '',
+          labelEn: item.labelEn || item.label || '',
+          url: item.url || '',
+          icon: item.icon || 'link',
+          target: item.target || '_self',
+          position: item.position || 'both'
+        }))
+        console.log('Loaded custom menu items:', customMenuItems.value.length)
+      }
+    } catch (error) {
+      console.error('Failed to load custom menu items:', error)
+      customMenuItems.value = []
+    }
+  }
+
   // ==================== Return Store API ====================
 
   return {
@@ -389,6 +417,9 @@ export const useAppStore = defineStore('app', () => {
     apiBaseUrl,
     docUrl,
     cachedPublicSettings,
+
+    // Custom menu items
+    customMenuItems,
 
     // Version state
     versionLoaded,
@@ -426,6 +457,9 @@ export const useAppStore = defineStore('app', () => {
     // Public settings actions
     fetchPublicSettings,
     clearPublicSettingsCache,
-    initFromInjectedConfig
+    initFromInjectedConfig,
+
+    // Custom menu actions
+    loadCustomMenuItems
   }
 })

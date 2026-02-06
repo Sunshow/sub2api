@@ -77,6 +77,29 @@
             </transition>
           </router-link>
         </div>
+
+        <!-- Custom Menu Items for Admin -->
+        <div v-if="customMenuItemsForAdmin.length > 0" class="sidebar-section">
+          <div v-if="!sidebarCollapsed" class="sidebar-section-title">
+            {{ t('nav.customMenu') || 'Links' }}
+          </div>
+          <div v-else class="mx-3 my-3 h-px bg-gray-200 dark:bg-dark-700"></div>
+
+          <a
+            v-for="(item, index) in customMenuItemsForAdmin"
+            :key="`custom-admin-${index}`"
+            :href="item.url"
+            :target="item.target"
+            class="sidebar-link mb-1"
+            :title="sidebarCollapsed ? getMenuItemLabel(item) : undefined"
+            @click.prevent="handleCustomMenuClick(item)"
+          >
+            <component :is="getCustomIcon(item.icon || 'link')" class="h-5 w-5 flex-shrink-0" />
+            <transition name="fade">
+              <span v-if="!sidebarCollapsed">{{ getMenuItemLabel(item) }}</span>
+            </transition>
+          </a>
+        </div>
       </template>
 
       <!-- Regular User View -->
@@ -97,6 +120,29 @@
               <span v-if="!sidebarCollapsed">{{ item.label }}</span>
             </transition>
           </router-link>
+        </div>
+
+        <!-- Custom Menu Items for User -->
+        <div v-if="customMenuItemsForUser.length > 0" class="sidebar-section">
+          <div v-if="!sidebarCollapsed" class="sidebar-section-title">
+            {{ t('nav.customMenu') || 'Links' }}
+          </div>
+          <div v-else class="mx-3 my-3 h-px bg-gray-200 dark:bg-dark-700"></div>
+
+          <a
+            v-for="(item, index) in customMenuItemsForUser"
+            :key="`custom-user-${index}`"
+            :href="item.url"
+            :target="item.target"
+            class="sidebar-link mb-1"
+            :title="sidebarCollapsed ? getMenuItemLabel(item) : undefined"
+            @click.prevent="handleCustomMenuClick(item)"
+          >
+            <component :is="getCustomIcon(item.icon || 'link')" class="h-5 w-5 flex-shrink-0" />
+            <transition name="fade">
+              <span v-if="!sidebarCollapsed">{{ getMenuItemLabel(item) }}</span>
+            </transition>
+          </a>
         </div>
       </template>
     </nav>
@@ -429,6 +475,99 @@ const ChevronDoubleRightIcon = {
     )
 }
 
+// Custom menu icons
+const BookIcon = {
+  render: () =>
+    h(
+      'svg',
+      { fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor', 'stroke-width': '1.5' },
+      [
+        h('path', {
+          'stroke-linecap': 'round',
+          'stroke-linejoin': 'round',
+          d: 'M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25'
+        })
+      ]
+    )
+}
+
+const QuestionIcon = {
+  render: () =>
+    h(
+      'svg',
+      { fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor', 'stroke-width': '1.5' },
+      [
+        h('path', {
+          'stroke-linecap': 'round',
+          'stroke-linejoin': 'round',
+          d: 'M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z'
+        })
+      ]
+    )
+}
+
+const LinkIcon = {
+  render: () =>
+    h(
+      'svg',
+      { fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor', 'stroke-width': '1.5' },
+      [
+        h('path', {
+          'stroke-linecap': 'round',
+          'stroke-linejoin': 'round',
+          d: 'M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244'
+        })
+      ]
+    )
+}
+
+const ExternalLinkIcon = {
+  render: () =>
+    h(
+      'svg',
+      { fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor', 'stroke-width': '1.5' },
+      [
+        h('path', {
+          'stroke-linecap': 'round',
+          'stroke-linejoin': 'round',
+          d: 'M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25'
+        })
+      ]
+    )
+}
+
+const HomeIcon = {
+  render: () =>
+    h(
+      'svg',
+      { fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor', 'stroke-width': '1.5' },
+      [
+        h('path', {
+          'stroke-linecap': 'round',
+          'stroke-linejoin': 'round',
+          d: 'M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25'
+        })
+      ]
+    )
+}
+
+// Icon mapping for custom menu items
+const customIconMap: Record<string, any> = {
+  book: BookIcon,
+  question: QuestionIcon,
+  link: LinkIcon,
+  external: ExternalLinkIcon,
+  home: HomeIcon,
+  chart: ChartIcon,
+  settings: CogIcon,
+  user: UserIcon,
+  gift: GiftIcon
+}
+
+function getCustomIcon(iconName: string) {
+  return customIconMap[iconName] || LinkIcon
+}
+
 // User navigation items (for regular users)
 const userNavItems = computed(() => {
   const items = [
@@ -503,6 +642,44 @@ const adminNavItems = computed(() => {
   baseItems.push({ path: '/admin/settings', label: t('nav.settings'), icon: CogIcon })
   return baseItems
 })
+
+// Custom menu items filtered by position
+const customMenuItemsForUser = computed(() => {
+  return appStore.customMenuItems.filter(
+    (item) => item.position === 'user' || item.position === 'both'
+  )
+})
+
+const customMenuItemsForAdmin = computed(() => {
+  return appStore.customMenuItems.filter(
+    (item) => item.position === 'admin' || item.position === 'both'
+  )
+})
+
+function getMenuItemLabel(item: any) {
+  const locale = t('locale') // Get current locale
+  return locale === 'en' ? item.labelEn : item.label
+}
+
+function handleCustomMenuClick(item: any) {
+  if (item.target === '_blank') {
+    window.open(item.url, '_blank')
+  } else {
+    // Check if it's an internal route or external URL
+    if (item.url.startsWith('http://') || item.url.startsWith('https://')) {
+      window.location.href = item.url
+    } else {
+      // Internal route - use router
+      window.location.href = item.url
+    }
+  }
+  
+  if (mobileOpen.value) {
+    setTimeout(() => {
+      appStore.setMobileOpen(false)
+    }, 150)
+  }
+}
 
 function toggleSidebar() {
   appStore.toggleSidebar()
