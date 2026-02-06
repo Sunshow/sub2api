@@ -48,7 +48,7 @@ pipeline {
                                 docker buildx build \
                                   --no-cache \
                                   --push \
-                                  --platform linux/amd64,linux/arm64 \
+                                  --platform linux/amd64 \
                                   -f ${env.DOCKERFILE_PATH} \
                                   -t ${fullImageName} \
                                   -t ${versionImageName} \
