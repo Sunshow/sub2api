@@ -43,6 +43,8 @@ export interface AdminUser extends User {
   notes: string
   // 用户专属分组倍率配置 (group_id -> rate_multiplier)
   group_rates?: Record<number, number>
+  // 当前并发数（仅管理员列表接口返回）
+  current_concurrency?: number
 }
 
 export interface LoginRequest {
@@ -377,6 +379,9 @@ export interface AdminGroup extends Group {
 
   // 分组下账号数量（仅管理员可见）
   account_count?: number
+
+  // 分组排序
+  sort_order: number
 }
 
 export interface ApiKey {
@@ -561,7 +566,10 @@ export interface Account {
   platform: AccountPlatform
   type: AccountType
   credentials?: Record<string, unknown>
-  extra?: CodexUsageSnapshot & Record<string, unknown> // Extra fields including Codex usage
+  // Extra fields including Codex usage and model-level rate limits (Antigravity smart retry)
+  extra?: (CodexUsageSnapshot & {
+    model_rate_limits?: Record<string, { rate_limited_at: string; rate_limit_reset_at: string }>
+  } & Record<string, unknown>)
   proxy_id: number | null
   concurrency: number
   current_concurrency?: number // Real-time concurrency count from Redis
