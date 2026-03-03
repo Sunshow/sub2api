@@ -91,12 +91,13 @@
             v-for="(item, index) in customMenuItemsForAdmin"
             :key="`custom-admin-${index}`"
             :href="item.url"
-            :target="item.target"
+            target="_blank"
             class="sidebar-link mb-1"
             :title="sidebarCollapsed ? getMenuItemLabel(item) : undefined"
             @click.prevent="handleCustomMenuClick(item)"
           >
-            <component :is="getCustomIcon(item.icon || 'link')" class="h-5 w-5 flex-shrink-0" />
+            <span v-if="item.icon_svg" class="h-5 w-5 flex-shrink-0 sidebar-svg-icon" v-html="sanitizeSvg(item.icon_svg)"></span>
+            <component v-else :is="getCustomIcon('link')" class="h-5 w-5 flex-shrink-0" />
             <transition name="fade">
               <span v-if="!sidebarCollapsed">{{ getMenuItemLabel(item) }}</span>
             </transition>
@@ -136,12 +137,13 @@
             v-for="(item, index) in customMenuItemsForUser"
             :key="`custom-user-${index}`"
             :href="item.url"
-            :target="item.target"
+            target="_blank"
             class="sidebar-link mb-1"
             :title="sidebarCollapsed ? getMenuItemLabel(item) : undefined"
             @click.prevent="handleCustomMenuClick(item)"
           >
-            <component :is="getCustomIcon(item.icon || 'link')" class="h-5 w-5 flex-shrink-0" />
+            <span v-if="item.icon_svg" class="h-5 w-5 flex-shrink-0 sidebar-svg-icon" v-html="sanitizeSvg(item.icon_svg)"></span>
+            <component v-else :is="getCustomIcon('link')" class="h-5 w-5 flex-shrink-0" />
             <transition name="fade">
               <span v-if="!sidebarCollapsed">{{ getMenuItemLabel(item) }}</span>
             </transition>
@@ -764,35 +766,15 @@ const adminNavItems = computed((): NavItem[] => {
   return baseItems
 })
 
-// Custom menu items filtered by position
-const customMenuItemsForUser = computed(() => {
-  return appStore.customMenuItems.filter(
-    (item) => item.position === 'user' || item.position === 'both'
-  )
-})
-
-const customMenuItemsForAdmin = computed(() => {
-  return appStore.customMenuItems.filter(
-    (item) => item.position === 'admin' || item.position === 'both'
-  )
-})
-
-function getMenuItemLabel(item: any) {
-  const locale = t('locale') // Get current locale
-  return locale === 'en' ? item.labelEn : item.label
+function getMenuItemLabel(item: { label: string }) {
+  return item.label
 }
 
-function handleCustomMenuClick(item: any) {
-  if (item.target === '_blank') {
+function handleCustomMenuClick(item: { url: string }) {
+  if (item.url.startsWith('http://') || item.url.startsWith('https://')) {
     window.open(item.url, '_blank')
   } else {
-    // Check if it's an internal route or external URL
-    if (item.url.startsWith('http://') || item.url.startsWith('https://')) {
-      window.location.href = item.url
-    } else {
-      // Internal route - use router
-      window.location.href = item.url
-    }
+    window.location.href = item.url
   }
   
   if (mobileOpen.value) {
