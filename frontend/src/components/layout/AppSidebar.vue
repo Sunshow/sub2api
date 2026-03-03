@@ -91,13 +91,13 @@
             v-for="(item, index) in customMenuItemsForAdmin"
             :key="`custom-admin-${index}`"
             :href="item.url"
-            target="_blank"
+            :target="item.target"
             class="sidebar-link mb-1"
             :title="sidebarCollapsed ? getMenuItemLabel(item) : undefined"
             @click.prevent="handleCustomMenuClick(item)"
           >
             <span v-if="item.icon_svg" class="h-5 w-5 flex-shrink-0 sidebar-svg-icon" v-html="sanitizeSvg(item.icon_svg)"></span>
-            <component v-else :is="getCustomIcon('link')" class="h-5 w-5 flex-shrink-0" />
+            <component v-else :is="getCustomIcon(item.icon_name || 'link')" class="h-5 w-5 flex-shrink-0" />
             <transition name="fade">
               <span v-if="!sidebarCollapsed">{{ getMenuItemLabel(item) }}</span>
             </transition>
@@ -137,13 +137,13 @@
             v-for="(item, index) in customMenuItemsForUser"
             :key="`custom-user-${index}`"
             :href="item.url"
-            target="_blank"
+            :target="item.target"
             class="sidebar-link mb-1"
             :title="sidebarCollapsed ? getMenuItemLabel(item) : undefined"
             @click.prevent="handleCustomMenuClick(item)"
           >
             <span v-if="item.icon_svg" class="h-5 w-5 flex-shrink-0 sidebar-svg-icon" v-html="sanitizeSvg(item.icon_svg)"></span>
-            <component v-else :is="getCustomIcon('link')" class="h-5 w-5 flex-shrink-0" />
+            <component v-else :is="getCustomIcon(item.icon_name || 'link')" class="h-5 w-5 flex-shrink-0" />
             <transition name="fade">
               <span v-if="!sidebarCollapsed">{{ getMenuItemLabel(item) }}</span>
             </transition>
@@ -670,7 +670,7 @@ const userNavItems = computed((): NavItem[] => {
       : []),
     { path: '/redeem', label: t('nav.redeem'), icon: GiftIcon, hideInSimpleMode: true },
     { path: '/profile', label: t('nav.profile'), icon: UserIcon },
-    ...customMenuItemsForUser.value.map((item): NavItem => ({
+    ...dbMenuItemsForUser.value.map((item): NavItem => ({
       path: `/custom/${item.id}`,
       label: item.label,
       icon: null,
@@ -701,7 +701,7 @@ const personalNavItems = computed((): NavItem[] => {
       : []),
     { path: '/redeem', label: t('nav.redeem'), icon: GiftIcon, hideInSimpleMode: true },
     { path: '/profile', label: t('nav.profile'), icon: UserIcon },
-    ...customMenuItemsForUser.value.map((item): NavItem => ({
+    ...dbMenuItemsForUser.value.map((item): NavItem => ({
       path: `/custom/${item.id}`,
       label: item.label,
       icon: null,
@@ -711,19 +711,64 @@ const personalNavItems = computed((): NavItem[] => {
   return authStore.isSimpleMode ? items.filter(item => !item.hideInSimpleMode) : items
 })
 
-// Custom menu items filtered by visibility
-const customMenuItemsForUser = computed(() => {
+// DB custom menu items filtered by visibility (used for router-link nav items)
+const dbMenuItemsForUser = computed(() => {
   const items = appStore.cachedPublicSettings?.custom_menu_items ?? []
   return items
     .filter((item) => item.visibility === 'user')
     .sort((a, b) => a.sort_order - b.sort_order)
 })
 
-const customMenuItemsForAdmin = computed(() => {
+const dbMenuItemsForAdmin = computed(() => {
   const items = appStore.cachedPublicSettings?.custom_menu_items ?? []
   return items
     .filter((item) => item.visibility === 'admin')
     .sort((a, b) => a.sort_order - b.sort_order)
+})
+
+interface SidebarMenuItem {
+  label: string
+  url: string
+  icon_name?: string
+  icon_svg?: string
+  target: '_self' | '_blank'
+}
+
+// Merged custom menu items from both DB settings and Docker env config
+const customMenuItemsForUser = computed((): SidebarMenuItem[] => {
+  const settingsItems = dbMenuItemsForUser.value.map((item): SidebarMenuItem => ({
+    label: item.label,
+    url: item.url,
+    icon_svg: item.icon_svg,
+    target: '_blank',
+  }))
+  const configItems = appStore.customMenuItems
+    .filter((item) => item.position === 'user' || item.position === 'both')
+    .map((item): SidebarMenuItem => ({
+      label: item.label,
+      url: item.url,
+      icon_name: item.icon,
+      target: (item.target || '_blank') as '_self' | '_blank',
+    }))
+  return [...settingsItems, ...configItems]
+})
+
+const customMenuItemsForAdmin = computed((): SidebarMenuItem[] => {
+  const settingsItems = dbMenuItemsForAdmin.value.map((item): SidebarMenuItem => ({
+    label: item.label,
+    url: item.url,
+    icon_svg: item.icon_svg,
+    target: '_blank',
+  }))
+  const configItems = appStore.customMenuItems
+    .filter((item) => item.position === 'admin' || item.position === 'both')
+    .map((item): SidebarMenuItem => ({
+      label: item.label,
+      url: item.url,
+      icon_name: item.icon,
+      target: (item.target || '_blank') as '_self' | '_blank',
+    }))
+  return [...settingsItems, ...configItems]
 })
 
 // Admin navigation items
@@ -751,7 +796,7 @@ const adminNavItems = computed((): NavItem[] => {
     filtered.push({ path: '/admin/data-management', label: t('nav.dataManagement'), icon: DatabaseIcon })
     filtered.push({ path: '/admin/settings', label: t('nav.settings'), icon: CogIcon })
     // Add admin custom menu items after settings
-    for (const cm of customMenuItemsForAdmin.value) {
+    for (const cm of dbMenuItemsForAdmin.value) {
       filtered.push({ path: `/custom/${cm.id}`, label: cm.label, icon: null, iconSvg: cm.icon_svg })
     }
     return filtered
@@ -760,7 +805,7 @@ const adminNavItems = computed((): NavItem[] => {
   baseItems.push({ path: '/admin/data-management', label: t('nav.dataManagement'), icon: DatabaseIcon })
   baseItems.push({ path: '/admin/settings', label: t('nav.settings'), icon: CogIcon })
   // Add admin custom menu items after settings
-  for (const cm of customMenuItemsForAdmin.value) {
+  for (const cm of dbMenuItemsForAdmin.value) {
     baseItems.push({ path: `/custom/${cm.id}`, label: cm.label, icon: null, iconSvg: cm.icon_svg })
   }
   return baseItems
@@ -770,9 +815,11 @@ function getMenuItemLabel(item: { label: string }) {
   return item.label
 }
 
-function handleCustomMenuClick(item: { url: string }) {
-  if (item.url.startsWith('http://') || item.url.startsWith('https://')) {
+function handleCustomMenuClick(item: SidebarMenuItem) {
+  if (item.target === '_blank') {
     window.open(item.url, '_blank')
+  } else if (item.url.startsWith('http://') || item.url.startsWith('https://')) {
+    window.location.href = item.url
   } else {
     window.location.href = item.url
   }
